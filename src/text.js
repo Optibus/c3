@@ -70,15 +70,6 @@ c3_chart_internal_fn.redrawText = function (xForText, yForText, forFlow, withTra
 c3_chart_internal_fn.redrawSecondText = function (xForText, yForText, forFlow, withTransition) {
     return [
         (withTransition ? this.mainText2.transition() : this.mainText2)
-            .attr('x', function () {return -2 + xForText.apply(this, arguments);})
-            .attr('y', function () { return -3 + yForText.apply(this, arguments);})
-            .style("fill", this.color)
-            .style("fill-opacity", forFlow ? 0 : this.opacityForText.bind(this))
-    ];
-};
-c3_chart_internal_fn.redrawSecondText = function (xForText, yForText, forFlow, withTransition) {
-    return [
-        (withTransition ? this.mainText2.transition() : this.mainText2)
             .attr('x', xForText)
             .attr('y', function () {return 20 + yForText.apply(this, arguments);})
             .style("fill", this.color)
