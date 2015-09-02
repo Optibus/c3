@@ -3,7 +3,7 @@
 
     /*global define, module, exports, require */
 
-    var c3 = { version: "0.4.11-rc3" };
+    var c3 = { version: "0.4.11-rc4" };
 
     var c3_chart_fn,
         c3_chart_internal_fn,
@@ -2815,7 +2815,7 @@
                 if (t.id === d.id || indices[t.id] !== indices[d.id]) { return; }
                 if (targetIds.indexOf(t.id) < targetIds.indexOf(d.id)) {
                     // check if the x values line up
-                    if (typeof values[i] === 'undefined' || values[i].x !== d.x) {
+                    if (typeof values[i] === 'undefined' || +values[i].x !== +d.x) {  // "+" for timeseries
                         // if not, try to find the value that does line up
                         i = -1;
                         values.forEach(function (v, j) {
@@ -3434,8 +3434,17 @@
     c3_chart_internal_fn.redrawText = function (xForText, yForText, forFlow, withTransition) {
         return [
             (withTransition ? this.mainText.transition() : this.mainText)
+                .attr('x', function () {return -2 + xForText.apply(this, arguments);})
+                .attr('y', function () { return -3 + yForText.apply(this, arguments);})
+                .style("fill", this.color)
+                .style("fill-opacity", forFlow ? 0 : this.opacityForText.bind(this))
+        ];
+    };
+    c3_chart_internal_fn.redrawSecondText = function (xForText, yForText, forFlow, withTransition) {
+        return [
+            (withTransition ? this.mainText2.transition() : this.mainText2)
                 .attr('x', xForText)
-                .attr('y', yForText)
+                .attr('y', function () {return 20 + yForText.apply(this, arguments);})
                 .style("fill", this.color)
                 .style("fill-opacity", forFlow ? 0 : this.opacityForText.bind(this))
         ];
@@ -3892,7 +3901,26 @@
             titleFormat = config.tooltip_format_title || defaultTitleFormat,
             nameFormat = config.tooltip_format_name || function (name) { return name; },
             valueFormat = config.tooltip_format_value || defaultValueFormat,
-            text, i, title, value, name, bgcolor;
+            text, i, title, value, name, bgcolor,
+            orderAsc = $$.isOrderAsc();
+
+        if (config.data_groups.length === 0) {
+            d.sort(function(a,b){
+                return orderAsc ? a.value - b.value : b.value - a.value;
+            });
+        } else {
+            var ids = $$.orderTargets($$.data.targets).map(function (i) {
+                return i.id;
+            });
+            d.sort(function(a, b) {
+                if (a.value > 0 && b.value > 0) {
+                    return orderAsc ? ids.indexOf(a.id) - ids.indexOf(b.id) : ids.indexOf(b.id) - ids.indexOf(a.id);
+                } else {
+                    return orderAsc ? a.value - b.value : b.value - a.value;
+                }
+            });
+        }
+
         for (i = 0; i < d.length; i++) {
             if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
 
